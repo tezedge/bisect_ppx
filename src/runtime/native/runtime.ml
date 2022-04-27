@@ -160,3 +160,10 @@ let register_file ~bisect_file ~bisect_silent ~bisect_sigterm ~filename ~points 
   (if !sigterm_enable then Lazy.force register_sigterm_hander);
   let () = Lazy.force register_dump in
   Common.register_file ~filename ~points
+
+let register_callbacks () =
+  Printf.fprintf Stdlib.stderr "registering callbacks\n";
+  Callback.register "dump" dump;
+  Callback.register "reset_counters" reset_counters
+
+let _ = register_callbacks ()
