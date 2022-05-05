@@ -131,35 +131,37 @@ let sigterm_handler (_ : int) =
   dump ();
   exit 0
 
+
+let dump_callback = ref (fun () -> ())
+let set_dump_callback f = dump_callback := f
+
+let sigusr2_handler (_ : int) =
+  Printf.fprintf Stdlib.stderr "SIGUSR2 handler called\n%!";
+  bisect_file_written := true;
+  dump ();
+  reset_counters ();
+  !dump_callback ()
+
 let dump_at_exit () =
   if not !bisect_file_written then begin
-    if !sigterm_enable then begin
-      ignore @@ Sys.(signal sigterm Signal_ignore);
-      bisect_file_written := true;
-      dump ();
-      ignore @@ Sys.(signal sigterm Signal_default)
-    end
-    else
-      dump ()
+    dump ()
   end
 
 let register_dump : unit Lazy.t =
   lazy (at_exit dump_at_exit)
 
-let register_sigterm_hander : unit Lazy.t =
-  lazy (ignore @@ Sys.(signal sigterm (Signal_handle sigterm_handler)))
-
 let register_file ~bisect_file ~bisect_silent ~bisect_sigterm ~filename ~points =
   (match bisect_file with None -> () | Some v -> default_bisect_file := v);
   (match bisect_silent with None -> () | Some v -> default_bisect_silent := v);
   sigterm_enable := env_to_boolean "BISECT_SIGTERM" bisect_sigterm;
-  (if !sigterm_enable then Lazy.force register_sigterm_hander);
   let () = Lazy.force register_dump in
   Common.register_file ~filename ~points
 
 let register_callbacks () =
-  Printf.fprintf Stdlib.stderr "registering callbacks\n";
   Callback.register "dump" dump;
   Callback.register "reset_counters" reset_counters
 
-let _ = register_callbacks ()
+let _ =
+  register_callbacks ();
+  Sys.(signal sigterm (Signal_handle sigterm_handler));
+  Sys.(signal sigusr2 (Signal_handle sigusr2_handler));

@@ -76,3 +76,6 @@ val dump_counters_exn : out_channel -> unit
 
 val reset_counters : unit -> unit
 (** [reset_counters ()] will reset the runtime coverage counters. *)
+
+
+val set_dump_callback : (unit -> unit) -> unit
