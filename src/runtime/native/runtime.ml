@@ -139,7 +139,7 @@ let sigusr2_handler (_ : int) =
   Printf.fprintf Stdlib.stderr "SIGUSR2 handler called\n%!";
   bisect_file_written := true;
   dump ();
-  reset_counters ();
+  (* reset_counters (); *)
   !dump_callback ()
 
 let dump_at_exit () =
